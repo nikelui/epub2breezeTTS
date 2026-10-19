@@ -10,7 +10,7 @@ from .models import Book, Chapter, Paragraph
 
 
 def get_metadata(book, name: str, default=None) -> str | None:
-    try:    
+    try:
         values = book.get_metadata("DC", name)
     except KeyError:
         return default

@@ -1,9 +1,10 @@
 import argparse
+from ast import arg
 from pathlib import Path
 
-from .chunker import chunk_paragraph
 from .epub_reader import read_epub
-from .project_store import save_project
+from .text.chunker import ChunkConfig, chunk_chapter
+from .text.export import write_chunks_jsonl
 
 
 def main():
@@ -12,42 +13,41 @@ def main():
     )
     parser.add_argument("epub", type=Path)
     parser.add_argument(
-        "--output", type=Path, default=Path("projects/my-book")
+        "--output", type=Path, default=Path("output/")
     )
-    parser.add_argument("--max-chars", type=int, default=400)
-    parser.add_argument("--min-chars", type=int, default=180)
+    parser.add_argument("--max-chars", type=int, default=500)
+    parser.add_argument("--target-chars", type=int, default=300)
+    parser.add_argument("--min-chars", type=int, default=150)
+    parser.add_argument("--verbose", type=bool, default=False)
 
     args = parser.parse_args()
 
     book = read_epub(args.epub)
 
+    config = ChunkConfig(
+        min_chars = args.min_chars,
+        target_chars = args.target_chars,
+        max_chars = args.max_chars,
+    )
+
     for chapter in book.chapters:
-        for paragraph in chapter.paragraphs:
-            chunk_paragraph(
-                paragraph,
-                max_chars=args.max_chars,
-                min_chars=args.min_chars,
-            )
+        chunk_chapter(chapter, config)
 
-    save_project(book, args.output)
+    write_chunks_jsonl(book, args.output / book.title / "chunks.jsonl")
 
-    print(f"Title: {book.title}")
-    print(f"Authors: {', '.join(book.authors) or 'Unknown'}")
-    print(f"Language: {book.language or 'Unknown'}")
-    print(f"Chapters: {len(book.chapters)}")
-    print(
-        "Paragraphs:",
-        sum(len(ch.paragraphs) for ch in book.chapters),
-    )
-    print(
-        "Chunks:",
-        sum(
-            len(p.chunks)
-            for ch in book.chapters
-            for p in ch.paragraphs
-        ),
-    )
-    print(f"Project saved to: {args.output.resolve()}")
+    if args.verbose:
+        print(f"Title: {book.title}")
+        print(f"Authors: {', '.join(book.authors) or 'Unknown'}")
+        print(f"Language: {book.language or 'Unknown'}")
+        print(f"Chapters: {len(book.chapters)}")
+        print(
+            "Paragraphs:",
+            sum(len(ch.paragraphs) for ch in book.chapters),
+        )
+        for ch, chapter in enumerate(book.chapters, 1):
+            print(f"Ch.{ch}: {len(chapter.chunks)} chunks.")
+
+        print(f"Project saved to: {args.output.resolve()}")
 
 
 if __name__ == "__main__":
