@@ -2,13 +2,16 @@
 authors = ["nikelui <nikelui@hotmail.it>"]
 channels = ["conda-forge"]
 name = "breeze_python"
+description = "Convert EPUBs to audiobooks using Breeze TTS"
 platforms = ["linux-64"]
 version = "0.1.0"
 
 [tasks]
 build-breeze = "python -m pip install --no-build-isolation -e ./breeze_python"
 test-breeze = "python -c \"from breeze import BreezeWrapper; print('Breeze OK')\""
+
 ebook-process = { cmd = "python -m epub_audiobook.cli", env = {PYTHONPATH = "src"}}
+test = {cmd = "python -m epub_audiobook.cli.main", env = {PYTHONPATH = "src"}}
 
 [dependencies]
 python = ">=3.15.0,<3.16"

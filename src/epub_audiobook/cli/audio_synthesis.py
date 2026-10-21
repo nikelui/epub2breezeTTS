@@ -8,23 +8,32 @@ from epub_audiobook.audio.generator import generate_selected, read_chunks_jsonl
 from epub_audiobook.audio.progress import file_sha256, model_identity
 
 
-def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description="Generate chunk WAVs with Breeze")
+def add_subparser(subparsers):
+    parser = subparsers.add_parser('audio_synthesis', help='Generate audio from text chunks')
     parser.add_argument("--chunks", type=Path, required=True, help="Chapter-level chunks.jsonl")
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--model", type=Path, required=True, help="GGUF path")
     parser.add_argument("--voice", type=Path, required=True, help="Saved voice path")
     parser.add_argument("--chapters", help='e.g. "1,3-5" (overrides config)')
+    parser.add_argument("--chapter-intro", action=argparse.BooleanOptionalAction, default=None, help="Generate a spoken chapter heading")
     parser.add_argument("--config", type=Path, help="Optional JSON config; supports chapters")
     parser.add_argument("--cfg-scale", type=float, default=1.0)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--cpu", action="store_true")
     parser.add_argument("--force", action="store_true", help="Regenerate selected WAVs")
     parser.add_argument("--no-retry-failed", action="store_true")
-    args = parser.parse_args(argv)
+
+    parser.set_defaults(handler=main)
+
+def main(args: argparse.Namespace) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     config = json.loads(args.config.read_text(encoding="utf-8")) if args.config else {}
     chapter_spec = args.chapters if args.chapters is not None else config.get("chapters", "all")
+    chapter_intro = (
+        args.chapter_intro
+        if args.chapter_intro is not None
+        else config.get("chapter_intro", True)
+    )
     chunks = read_chunks_jsonl(args.chunks)
 
     # Adjust this line if your custom load_voice signature differs.
@@ -41,10 +50,11 @@ def main(argv=None) -> int:
             voice_identity=file_sha256(args.voice) + ":" + voice.transcript,
             cfg_scale=args.cfg_scale, seed=args.seed, chapters=chapter_spec,
             force=args.force, retry_failed=not args.no_retry_failed,
+            chapter_intro=chapter_intro,
         )
     print(f"Generated: {result.generated}; skipped: {result.skipped}; failed: {result.failed}")
     return 1 if result.failed else 0
 
 
-if __name__ == "__main__":
-    raise SystemExit(main())
+# if __name__ == "__main__":
+#     raise SystemExit(main())

@@ -5,21 +5,18 @@ from epub_audiobook.text.epub_reader import read_epub
 from epub_audiobook.text.chunker import ChunkConfig, chunk_chapter
 from epub_audiobook.text.export import write_chunks_jsonl
 
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="Extract and chunk text from an EPUB."
-    )
+def add_subparser(subparsers):
+    parser = subparsers.add_parser('process_text', help='Process EPUB text and chunk it')
     parser.add_argument("epub", type=Path)
-    parser.add_argument(
-        "--output", type=Path, default=Path("output/")
-    )
-    parser.add_argument("--max-chars", type=int, default=500)
+    parser.add_argument("--output", type=Path, default=Path("output/"))
+    parser.add_argument("--max-chars", type=int, default=400)
     parser.add_argument("--target-chars", type=int, default=300)
     parser.add_argument("--min-chars", type=int, default=150)
-    parser.add_argument("--verbose", type=bool, default=False)
+    parser.add_argument("--verbose", action="store_true")
 
-    args = parser.parse_args()
+    parser.set_defaults(handler=main)
+
+def main(args: argparse.Namespace):
 
     book = read_epub(args.epub)
 
@@ -49,5 +46,5 @@ def main():
         print(f"Project saved to: {args.output.resolve()}")
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     raise SystemExit(main())

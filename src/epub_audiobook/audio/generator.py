@@ -21,6 +21,7 @@ class AudioChunk:
     chapter_index: int
     chunk_index: int
     text: str
+    chapter_title: str = ""
 
 
 def read_chunks_jsonl(path: Path) -> list[AudioChunk]:
@@ -39,6 +40,7 @@ def read_chunks_jsonl(path: Path) -> list[AudioChunk]:
                     chapter_index=int(entry["chapter_index"]),
                     chunk_index=int(entry["chunk_index"]),
                     text=entry.get("tts_text") if entry.get("tts_text") is not None else entry["text"],
+                    chapter_title=str(entry.get("chapter_title") or ""),
                 )
             except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
                 raise ValueError(f"Invalid JSONL record at line {line_number}") from exc
@@ -70,6 +72,7 @@ def generate_selected(
     cfg_scale: float = 1.0,
     seed: int = 42,
     chapters: str | None = None,
+    chapter_intro: bool = True,
     force: bool = False,
     retry_failed: bool = True,
 ) -> GenerationSummary:
@@ -81,7 +84,28 @@ def generate_selected(
     selected = set(select_chapters(chapters, {c.chapter_index for c in chunks}))
     manifest = Manifest(output_dir / "progress.json")
     summary = GenerationSummary()
-    for chunk in chunks:
+
+    # Add chapter intro chunks
+    selected_chunks = [
+        chunk
+        for chunk in chunks
+        if chunk.chapter_index in selected
+    ]
+
+    tasks = selected_chunks + (
+        make_chapter_intros(selected_chunks)
+        if chapter_intro
+        else []
+    )
+
+    tasks.sort(
+        key=lambda chunk: (
+            chunk.chapter_index,
+            chunk.chunk_index,
+        )
+    )
+
+    for chunk in tasks:
         if chunk.chapter_index not in selected:
             continue
         path = output_dir / chunk.chapter_id / f"{chunk.id}.wav"
@@ -119,3 +143,47 @@ def generate_selected(
             summary.failed += 1
             logger.exception("Failed to generate %s", chunk.id)
     return summary
+
+def make_chapter_intros(
+    chunks: list[AudioChunk],
+) -> list[AudioChunk]:
+    """Generates a brief text with the chapter number and title (where available)"""
+    by_chapter: dict[str, AudioChunk] = {}
+
+    for chunk in chunks:
+        previous = by_chapter.setdefault(
+            chunk.chapter_id,
+            chunk,
+        )
+
+        if (
+            previous.chapter_index != chunk.chapter_index
+            or previous.chapter_title != chunk.chapter_title
+        ):
+            raise ValueError(
+                f"Inconsistent chapter metadata: {chunk.chapter_id}"
+            )
+
+    intros = []
+
+    for chapter_id, chunk in by_chapter.items():
+
+        title = chunk.chapter_title.strip()
+
+        if not title:
+            raise ValueError(
+                f"Missing chapter_title for {chapter_id}"
+            )
+
+        intros.append(
+            AudioChunk(
+                id=f"{chapter_id}-c000000",
+                chapter_id=chapter_id,
+                chapter_index=chunk.chapter_index,
+                chunk_index=0,
+                text=f"Chapter {chunk.chapter_index}. {title}",
+                chapter_title=title,
+            )
+        )
+
+    return intros
