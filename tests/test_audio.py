@@ -1,11 +1,14 @@
 import json
 import wave
-from pathlib import Path
 
 import pytest
 
-from epub_tts.audio.selection import select_chapters
-from epub_tts.audio.generator import AudioChunk, generate_selected, read_chunks_jsonl
+from epub_audiobook.audio.generator import (
+    AudioChunk,
+    generate_selected,
+    read_chunks_jsonl,
+)
+from epub_audiobook.audio.selection import select_chapters
 
 
 def wav_writer(text, path, seed):

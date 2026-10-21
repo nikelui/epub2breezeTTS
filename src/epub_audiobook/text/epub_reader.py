@@ -6,7 +6,7 @@ from pathlib import Path
 from bs4 import BeautifulSoup
 from ebooklib import ITEM_DOCUMENT, epub
 
-from .models import Book, Chapter, Paragraph
+from epub_audiobook.models import Book, Chapter, Paragraph
 
 
 def get_metadata(book, name: str, default=None) -> str | None:

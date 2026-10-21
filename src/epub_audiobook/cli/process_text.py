@@ -1,10 +1,9 @@
-import argparse
-from ast import arg
+import argparse  # noqa: I001
 from pathlib import Path
 
-from .epub_reader import read_epub
-from .text.chunker import ChunkConfig, chunk_chapter
-from .text.export import write_chunks_jsonl
+from epub_audiobook.text.epub_reader import read_epub
+from epub_audiobook.text.chunker import ChunkConfig, chunk_chapter
+from epub_audiobook.text.export import write_chunks_jsonl
 
 
 def main():
