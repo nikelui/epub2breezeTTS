@@ -1,7 +1,7 @@
 """Build chapter text while preserving offsets into original Paragraph.text."""
 from dataclasses import dataclass
 
-from ..models import Chapter, SourceSpan
+from epub_audiobook.models import Chapter, SourceSpan
 
 
 @dataclass(frozen=True)

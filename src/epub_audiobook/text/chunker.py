@@ -6,9 +6,9 @@ from segmented sentences. Only whitespace at chunk edges is omitted.
 from bisect import bisect_left
 from dataclasses import dataclass
 
-from ..models import Chapter, Chunk
-from .boundaries import Boundary, find_boundaries
-from .chapter_text import build_chapter_text
+from epub_audiobook.models import Chapter, Chunk
+from epub_audiobook.text.boundaries import Boundary, find_boundaries
+from epub_audiobook.text.chapter_text import build_chapter_text
 
 
 @dataclass(frozen=True)

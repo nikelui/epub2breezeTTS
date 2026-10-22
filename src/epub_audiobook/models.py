@@ -1,4 +1,5 @@
 from dataclasses import asdict, dataclass, field
+from pathlib import Path
 
 
 @dataclass
@@ -76,3 +77,61 @@ class Book:
 
     def to_dict(self) -> dict:
         return asdict(self)
+
+@dataclass(frozen=True)
+class ProjectPaths:
+    root: Path
+
+    def __post_init__(self):
+        object.__setattr__(
+            self,
+            "root",
+            Path(self.root).expanduser().resolve(),
+        )
+
+    @property
+    def metadata(self) -> Path:
+        return self.root / "book_metadata.json"
+
+    @property
+    def extracted(self) -> Path:
+        return self.root / "paragraphs.jsonl"
+
+    @property
+    def paragraphs(self) -> Path:
+        return self.root / "paragraphs.jsonl"
+
+    @property
+    def chunks(self) -> Path:
+        return self.root / "chunks.jsonl"
+
+    @property
+    def audio(self) -> Path:
+        return self.root / "audio"
+
+    @property
+    def progress(self) -> Path:
+        return self.audio / "progress.json"
+
+    def chapter_audio(self, chapter_id: str) -> Path:
+        return self.audio / chapter_id
+
+    def chunk_audio(
+        self,
+        chapter_id: str,
+        chunk_id: str,
+    ) -> Path:
+        return (
+            self.chapter_audio(chapter_id)
+            / f"{chunk_id}.wav"
+        )
+
+    @property
+    def audiobook(self) -> Path:
+        return self.root / "combined_audiobook.m4b"
+
+    def create(self) -> None:
+        self.root.mkdir(
+            parents=True,
+            exist_ok=True,
+        )

@@ -2,8 +2,8 @@
 import re
 from dataclasses import dataclass
 
-from .chapter_text import ChapterText
-from .sentence_splitter import sentence_ends
+from epub_audiobook.text.chapter_text import ChapterText
+from epub_audiobook.text.sentence_splitter import sentence_ends
 
 
 @dataclass(frozen=True)

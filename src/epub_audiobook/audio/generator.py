@@ -8,8 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-from .progress import Manifest, fingerprint, valid_wav
-from .selection import select_chapters
+from epub_audiobook.audio.progress import Manifest, fingerprint, valid_wav
+from epub_audiobook.audio.selection import select_chapters
 
 logger = logging.getLogger(__name__)
 
@@ -108,7 +108,7 @@ def generate_selected(
     for chunk in tasks:
         if chunk.chapter_index not in selected:
             continue
-        path = output_dir / chunk.chapter_id / f"{chunk.id}.wav"
+        path = output_dir / "audio" / chunk.chapter_id / f"{chunk.id}.wav"
         temp_path = path.with_name(path.stem + ".partial.wav")
         signature = fingerprint(chunk.text, model_identity=model_identity,
                                 voice_identity=voice_identity,

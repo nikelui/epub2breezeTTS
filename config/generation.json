@@ -1,6 +1,9 @@
 {
-  "backend": "http",
-  "chapters": "1",
+  "backend": "cython",
+  "output_dir": "output_test/",
+  "voice_dir": "voices/",
+  "voice_id": "chiquito-crasto",
+  "chapters": "4",
   "chapter_intro": true,
   "cfg_scale": 1.0,
   "seed": 42,

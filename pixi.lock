@@ -19,6 +19,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/colorama-0.4.6-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/cpython-3.15.1-py315hd8ed1ab_100.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/cython-3.3.0-py315h1a5dd60_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/debugpy-1.8.22-py315h219b181_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/exceptiongroup-1.3.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h2-4.4.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/hpack-4.2.0-pyhd8ed1ab_0.conda
@@ -79,6 +80,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/colorama-0.4.6-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/cpython-3.15.1-py315hd8ed1ab_100.conda
       - conda: https://conda.anaconda.org/conda-forge/win-64/cython-3.3.0-py315h02162c5_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/debugpy-1.8.22-py315h05291f8_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/exceptiongroup-1.3.1-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/h2-4.4.1-pyhcf101f3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/hpack-4.2.0-pyhd8ed1ab_0.conda
@@ -340,6 +342,36 @@ packages:
   purls: []
   size: 3538427
   timestamp: 1792636428925
+- conda: https://conda.anaconda.org/conda-forge/linux-64/debugpy-1.8.22-py315h219b181_0.conda
+  sha256: c6bbe9807ae157c98631b5e3427eb4ac0ed2d5056bb8c9b32e3a75cfffeab558
+  md5: 96f29d36cf2298e6941e5b16512855af
+  depends:
+  - python
+  - libstdcxx >=15
+  - libgcc >=15
+  - __glibc >=2.17,<3.0.a0
+  - python_abi 3.15.* *_cp315
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/debugpy?source=compressed-mapping
+  size: 2870464
+  timestamp: 1789745281625
+- conda: https://conda.anaconda.org/conda-forge/win-64/debugpy-1.8.22-py315h05291f8_0.conda
+  sha256: 084e2fd0653ed12f3f23318004c7579838b56a14195346802b6bdfe598f9c8fe
+  md5: 9360b9080a0e61ead9618ad2cad50caa
+  depends:
+  - python
+  - vc >=14.3,<15
+  - vc14_runtime >=14.44.35208
+  - ucrt >=10.0.20348.0
+  - python_abi 3.15.* *_cp315
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/debugpy?source=compressed-mapping
+  size: 4056947
+  timestamp: 1789745259042
 - pypi: https://files.pythonhosted.org/packages/bf/ee/aa015c5de8b0dc42a8e507eae8c2de5d1c0e068c896858fec6d502402ed6/ebooklib-0.20-py3-none-any.whl
   name: ebooklib
   version: '0.20'
