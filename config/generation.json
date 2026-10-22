@@ -1,4 +1,17 @@
 {
-  "chapters": "1,3-5",
-  "chapter-intro": true
+  "backend": "http",
+  "chapters": "1",
+  "chapter_intro": true,
+  "cfg_scale": 1.0,
+  "seed": 42,
+  "server": {
+    "managed": false
+  },
+  "http": {
+    "url": "http://127.0.0.1:8080",
+    "voice_id": "chiquito-crasto",
+    "split_chars": 0,
+    "timeout": 600,
+    "model_version": "local-q8-2026-10"
+  }
 }

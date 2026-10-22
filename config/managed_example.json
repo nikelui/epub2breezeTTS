@@ -1,0 +1,20 @@
+{
+  "backend": "http",
+  "chapters": "1",
+  "chapter_intro": true,
+  "cfg_scale": 1.0,
+  "seed": 42,
+  "server": {
+    "managed": true,
+    "executable": "C:/Breeze/breeze-server.exe",
+    "model": "C:/Breeze/breeze-tts-2-q8_0.gguf",
+    "host": "127.0.0.1",
+    "port": 8080,
+    "ws_port": -1
+  },
+  "http": {
+    "reference_wav": "C:/voices/narrator.wav",
+    "reference_text": "Exact transcript of the voice recording.",
+    "split_chars": 0
+  }
+}
