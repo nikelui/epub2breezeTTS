@@ -1,0 +1,22 @@
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+
+.gitattributes
+
+# Eclude data folders
+audio samples/
+books/
+output_test/
+voices/
+
+# Exclude generative models
+*.gguf
+
+# Exclude pre-compiled libraries
+*.pyc
+
+# Exclude test scripts
+breeze_test.py
+test_script.txt
+synthesis_test.py
