@@ -10,6 +10,7 @@ from typing import Callable
 
 from epub_audiobook.audio.progress import Manifest, fingerprint, valid_wav
 from epub_audiobook.audio.selection import select_chapters
+from epub_audiobook.models import ProjectPaths
 
 logger = logging.getLogger(__name__)
 
@@ -25,10 +26,12 @@ class AudioChunk:
 
 
 def read_chunks_jsonl(path: Path) -> list[AudioChunk]:
+    proj_path = ProjectPaths(path)
+
     chunks = []
     seen: set[str] = set()
     orders: set[tuple[int, int]] = set()
-    with path.open(encoding="utf-8") as stream:
+    with proj_path.chunks.open(encoding="utf-8") as stream:
         for line_number, line in enumerate(stream, 1):
             if not line.strip():
                 continue
@@ -81,8 +84,9 @@ def generate_selected(
     Single-process only. Existing audio is reused *only* when its manifest
     fingerprint matches and the WAV is readable; force regenerates all selected.
     """
+    proj_path = ProjectPaths(output_dir)
     selected = set(select_chapters(chapters, {c.chapter_index for c in chunks}))
-    manifest = Manifest(output_dir / "progress.json")
+    manifest = Manifest(proj_path.progress)
     summary = GenerationSummary()
 
     # Add chapter intro chunks
@@ -108,7 +112,8 @@ def generate_selected(
     for chunk in tasks:
         if chunk.chapter_index not in selected:
             continue
-        path = output_dir / "audio" / chunk.chapter_id / f"{chunk.id}.wav"
+        path = proj_path.chunk_audio(chunk.chapter_id, chunk.id)
+        # path = output_dir / "audio" / chunk.chapter_id / f"{chunk.id}.wav"
         temp_path = path.with_name(path.stem + ".partial.wav")
         signature = fingerprint(chunk.text, model_identity=model_identity,
                                 voice_identity=voice_identity,
@@ -125,20 +130,20 @@ def generate_selected(
         path.parent.mkdir(parents=True, exist_ok=True)
         temp_path.unlink(missing_ok=True)
         manifest.update(chunk.id, status="in_progress", fingerprint=signature,
-                        audio_file=str(path.relative_to(output_dir)))
+                        audio_file=str(path.relative_to(proj_path.root)))
         try:
             synthesize(chunk.text, temp_path, seed)
             if not valid_wav(temp_path):
                 raise RuntimeError("Synthesis did not produce a valid PCM WAV")
             os.replace(temp_path, path)
             manifest.update(chunk.id, status="completed", fingerprint=signature,
-                            audio_file=str(path.relative_to(output_dir)))
+                            audio_file=str(path.relative_to(proj_path.root)))
             summary.generated += 1
             logger.info("Generated %s", chunk.id)
         except Exception as exc:
             temp_path.unlink(missing_ok=True)
             manifest.update(chunk.id, status="failed", fingerprint=signature,
-                            audio_file=str(path.relative_to(output_dir)),
+                            audio_file=str(path.relative_to(proj_path.root)),
                             error=f"{type(exc).__name__}: {exc}")
             summary.failed += 1
             logger.exception("Failed to generate %s", chunk.id)

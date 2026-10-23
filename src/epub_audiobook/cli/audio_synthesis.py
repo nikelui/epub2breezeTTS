@@ -11,15 +11,14 @@ from epub_audiobook.audio.generator import generate_selected, read_chunks_jsonl
 from epub_audiobook.audio.http_backend import BreezeHTTPBackend, HTTPVoice
 from epub_audiobook.audio.progress import file_sha256, model_identity
 from epub_audiobook.audio.server_process import ManagedBreezeServer, ServerConfig
-from epub_audiobook.models import ProjectPaths
 
 
 def add_subparser(subparsers):
     parser = subparsers.add_parser('audio_synthesis', help='Generate audio from text chunks')
     parser.add_argument('--backend', choices=('cython', 'http'), default=None)
     # parser.add_argument("--chunks", type=Path, required=True, help="Chapter-level chunks.jsonl")
-    parser.add_argument("--output-dir", type=Path, default=Path("output/"))
-    parser.add_argument("--model", type=Path, required=True, help="GGUF path")
+    parser.add_argument("--output-dir", type=Path)
+    parser.add_argument("--model", type=Path, help="GGUF path")
     parser.add_argument('--reference-wav', type=Path, help='HTTP reference audio for cloning')
     parser.add_argument('--reference-text', help='Exact transcript of HTTP reference WAV')
     parser.add_argument("--voice-dir", type=Path, help="Saved voices directory")
@@ -38,15 +37,15 @@ def add_subparser(subparsers):
 def main(args: argparse.Namespace) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     config = json.loads(args.config.read_text(encoding="utf-8")) if args.config else {}
-    output_dir = args.output_dir if args.output_dir is not None else config.get("output_dir", "output/")
-    output = ProjectPaths(output_dir)
+    output_dir = args.output_dir if args.output_dir is not None else config.get("output_dir", "output")
+    output = Path(output_dir)
     chapter_spec = args.chapters if args.chapters is not None else config.get("chapters", "all")
     chapter_intro = (
         args.chapter_intro
         if args.chapter_intro is not None
         else config.get("chapter_intro", True)
     )
-    chunks = read_chunks_jsonl(output.chunks)
+    chunks = read_chunks_jsonl(output)
     cfg_scale = args.cfg_scale if args.cfg_scale is not None else config.get('cfg_scale', 1.0)
     backend_kind = args.backend or config.get('backend', 'cython')
     voice_id = args.voice_id if args.voice_id is not None else config.get('voice_id')
@@ -54,10 +53,16 @@ def main(args: argparse.Namespace) -> int:
 
     def generate(synthesizer, *, model_key: str, voice_key: str):
             return generate_selected(
-                chunks=chunks, output_dir=output.audio, synthesize=synthesizer,
-                model_identity=model_key, voice_identity=voice_key,
-                cfg_scale=cfg_scale, seed=args.seed, chapters=chapter_spec,
-                force=args.force, retry_failed=not args.no_retry_failed,
+                chunks=chunks,
+                output_dir=output,
+                synthesize=synthesizer,
+                model_identity=model_key,
+                voice_identity=voice_key,
+                cfg_scale=cfg_scale,
+                seed=args.seed,
+                chapters=chapter_spec,
+                force=args.force,
+                retry_failed=not args.no_retry_failed,
                 chapter_intro=chapter_intro,
             )
 
@@ -66,17 +71,22 @@ def main(args: argparse.Namespace) -> int:
         from breeze import BreezeWrapper, load_voice
 
         from epub_audiobook.audio.breeze_backend import BreezeBackend
-
+        voice_path = str(f"{voice_dir}/{voice_id}.breeze")
         voice = load_voice(str(f"{voice_dir}/{voice_id}.breeze"))
         with BreezeWrapper(gguf_path=str(args.model), use_gpu=not args.cpu) as tts:
             backend = BreezeBackend(tts=tts, voice=voice, cfg_scale=cfg_scale)
             result = generate_selected(
-                chunks=chunks, output_dir=output_dir, synthesize=backend.synthesize,
+                chunks=chunks,
+                output_dir=output_dir,
+                synthesize=backend.synthesize,
                 model_identity=model_identity(args.model),
-                voice_identity=(file_sha256(Path(f"{voice_dir}/{voice_id}.breeze")) +
+                voice_identity=(file_sha256(Path(voice_path)) +
                                     ":" + voice.transcript),
-                cfg_scale=cfg_scale, seed=args.seed, chapters=chapter_spec,
-                force=args.force, retry_failed=not args.no_retry_failed,
+                cfg_scale=cfg_scale,
+                seed=args.seed,
+                chapters=chapter_spec,
+                force=args.force,
+                retry_failed=not args.no_retry_failed,
                 chapter_intro=chapter_intro,
             )
 
@@ -119,8 +129,9 @@ def main(args: argparse.Namespace) -> int:
                     # after changing its model or server build.
                     model_key = (model_identity(model) if model is not None else
                                  'external:' + str(http_cfg.get('model_version', 'unspecified')))
-                    result = generate(backend.synthesize, model_key=model_key,
-                                      voice_key=voice.identity() + ':' + params_key)
+                    result = generate(backend.synthesize,
+                                    model_key=model_key,
+                                    voice_key=voice.identity() + ':' + params_key)
     else:
         args.parser.error(f'Unknown backend: {backend_kind}')
     if result:

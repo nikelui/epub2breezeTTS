@@ -1,6 +1,6 @@
 import argparse  # noqa: I001
 from pathlib import Path
-from epub_audiobook.models import ProjectPaths, Book
+from epub_audiobook.models import Book
 
 from epub_audiobook.text.epub_reader import read_epub
 from epub_audiobook.text.chunker import ChunkConfig, chunk_chapter
@@ -20,24 +20,23 @@ def add_subparser(subparsers):
 
 def process_text(epub_path:Path, output_dir: Path, chunk_config) -> Book:
     """Extract text from epub and save relevant metadata, paragraphs and text chunks."""
-    paths = ProjectPaths(output_dir)
-    paths.create()
+    paths = Path(output_dir)
 
     # 1. Extract book structure and text
     book = read_epub(epub_path)
 
     # 2. Preserve original paragraphs
-    write_paragraphs_jsonl(book, paths.paragraphs)
+    write_paragraphs_jsonl(book, paths)
 
     # 3. Generate chapter-level chunks
     for chapter in book.chapters:
         chunk_chapter(chapter, chunk_config)
 
     # 4. Export generated chunks
-    write_chunks_jsonl(book, paths.root)
+    write_chunks_jsonl(book, paths)
 
     # 5. Export compact metadata
-    write_metadata_json(book, paths.metadata)
+    write_metadata_json(book, paths)
 
     return book
 
@@ -63,7 +62,7 @@ def main(args: argparse.Namespace):
         for ch, chapter in enumerate(book.chapters, 1):
             print(f"Ch.{ch}: {len(chapter.chunks)} chunks.")
 
-        print(f"Project saved to: {args.output.resolve()}")
+        print(f"Project saved to: {args.output_dir.resolve()}")
 
 
 # if __name__ == "__main__":

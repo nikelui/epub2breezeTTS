@@ -46,8 +46,9 @@ def write_chunks_jsonl(book: Book, output_dir: str | Path) -> None:
                 }
                 f.write(json.dumps(row, ensure_ascii=False) + '\n')
 
-def write_metadata_json(book: Book, destination: Path) -> None:
+def write_metadata_json(book: Book, output_dir: str | Path) -> None:
     """Export compact book metadata, excluding all paragraph and chunk text."""
+    output = ProjectPaths(Path(output_dir))
     payload = {
         "schema_version": 1,
         "title": book.title,
@@ -68,18 +69,18 @@ def write_metadata_json(book: Book, destination: Path) -> None:
             for chapter in book.chapters
         ],
     }
-    _atomic_write_json(Path(destination), payload)
+    _atomic_write_json(output.metadata, payload)
 
 
-def write_paragraphs_jsonl(book: Book, destination: Path) -> None:
+def write_paragraphs_jsonl(book: Book, destination: str | Path) -> None:
     """Write one source paragraph per line; never write its generated chunks."""
-    destination = Path(destination)
-    destination.parent.mkdir(parents=True, exist_ok=True)
+    output = ProjectPaths(Path(destination))
+    output.paragraphs.parent.mkdir(parents=True, exist_ok=True)
     temporary = None
     try:
         with tempfile.NamedTemporaryFile(
             mode="w", encoding="utf-8", newline="\n",
-            dir=destination.parent, prefix=f".{destination.name}.",
+            dir=output.paragraphs.parent, prefix=f".{output.paragraphs.name}.",
             suffix=".tmp", delete=False,
         ) as stream:
             temporary = Path(stream.name)
@@ -93,7 +94,7 @@ def write_paragraphs_jsonl(book: Book, destination: Path) -> None:
                         "text": paragraph.text,
                     }
                     stream.write(json.dumps(record, ensure_ascii=False) + "\n")
-        os.replace(temporary, destination)
+        os.replace(temporary, output.paragraphs)
     finally:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
