@@ -94,10 +94,6 @@ class ProjectPaths:
         return self.root / "book_metadata.json"
 
     @property
-    def extracted(self) -> Path:
-        return self.root / "paragraphs.jsonl"
-
-    @property
     def paragraphs(self) -> Path:
         return self.root / "paragraphs.jsonl"
 
@@ -125,6 +121,10 @@ class ProjectPaths:
             self.chapter_audio(chapter_id)
             / f"{chunk_id}.wav"
         )
+
+    @property
+    def full_chapters(self) -> Path:
+        return self.audio / "full_chapters"
 
     @property
     def audiobook(self) -> Path:

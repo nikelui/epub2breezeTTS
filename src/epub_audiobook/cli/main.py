@@ -1,6 +1,6 @@
 import argparse
 
-from epub_audiobook.cli import audio_synthesis, process_text, book_info
+from epub_audiobook.cli import assemble_cli, audio_synthesis, book_info, process_text
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -18,6 +18,7 @@ def build_parser() -> argparse.ArgumentParser:
     audio_synthesis.add_subparser(subparsers)
     process_text.add_subparser(subparsers)
     book_info.add_subparser(subparsers)
+    assemble_cli.add_subparser(subparsers)
     return parser
 
 def main() -> int:
