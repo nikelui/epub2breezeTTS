@@ -1,16 +1,16 @@
 {
-  "backend": "http",
-  "output_dir": "output_test/",
-  "voice_dir": "C:\\Users\\Luigi\\Desktop\\Breeze\\breeze-tts-2-v0.1.0-windows-x64-vulkan\\voices",
-  "voice_id": "chiquito-crasto",
+  "backend": "cython",
+  "output_dir": "output_test/Villainess Malfoy",
+  "voice_dir": "voices/",
+  "voice_id": "louise-belle",
   "chapters": "1-3",
   "chapter_intro": true,
   "cfg_scale": 1.0,
   "seed": 42,
   "server": {
     "managed": false,
-    "executable": "C:\\Users\\Luigi\\Desktop\\Breeze\\breeze-tts-2-v0.1.0-windows-x64-vulkan\\breeze-server.exe",
-    "model": "C:\\Users\\Luigi\\Desktop\\Breeze\\breeze-tts-2-v0.1.0-windows-x64-vulkan\\breeze-tts-2-q8_0.gguf",
+    "executable": "breeze_native/breeze-server",
+    "model": "breeze-tts-2-q8_0.gguf",
     "host": "127.0.0.1",
     "port": 8080,
     "ws_port": -1
