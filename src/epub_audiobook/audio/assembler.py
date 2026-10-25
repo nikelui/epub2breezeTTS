@@ -154,5 +154,7 @@ def assemble_chapters(paths, *, options: AssemblyOptions = AssemblyOptions(), ch
             if not staged.exists() or staged.stat().st_size == 0:
                 raise RuntimeError(f"FFmpeg produced an empty file for {cid}")
             os.replace(staged, output)
+            print(f"Created chapter {index} to {output}")
+            results.append(output)
         results.append(output)
     return results

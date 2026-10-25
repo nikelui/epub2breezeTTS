@@ -3,7 +3,7 @@
   "output_dir": "output_test/Villainess Malfoy",
   "voice_dir": "voices/",
   "voice_id": "louise-belle",
-  "chapters": "4",
+  "chapters": "19",
   "chapter_intro": true,
   "cfg_scale": 1.0,
   "seed": 42,
