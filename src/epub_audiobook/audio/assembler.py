@@ -7,7 +7,7 @@ import re
 import subprocess
 import tempfile
 import wave
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
@@ -126,7 +126,7 @@ def assemble_chapters(paths, *, options: AssemblyOptions = AssemblyOptions(), ch
 
         output = destination / f"chapter{index:04d}.{options.format}"
         if output.exists() and not options.overwrite:
-            print(f"[SKIP] Chapter {index:04d}: {destination.name}")
+            print(f"[SKIP] Chapter {index:04d}: {destination.name}/{output.name}")
             results.skipped.append(destination)
             continue
         title = str(chapter.get("title") or f"Chapter {index}")
@@ -164,7 +164,7 @@ def assemble_chapters(paths, *, options: AssemblyOptions = AssemblyOptions(), ch
             if not staged.exists() or staged.stat().st_size == 0:
                 raise RuntimeError(f"FFmpeg produced an empty file for {cid}")
             os.replace(staged, output)
-            print(f"Created chapter {index} to {output}")
+            print(f"[GENERATE] Chapter {index}: {destination.name}/{output.name}")
             results.generated.append(output)
         #results.append(output)
     return results
