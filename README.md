@@ -8,7 +8,7 @@ A collection of tools for building a pipeline ebook -> audiobook in Pyhton using
 - lxml
 - requests
 - ffmpeg
-
+- ebooklib >= 0.20  # Older versions have a bug with Windows
 
 ## Setup
 - The project uses [pixi](https://pixi.prefix.dev/latest/) for package management. If you use another tool you need to recreate the command-line tasks defined in pixi.toml yourself.

@@ -101,3 +101,5 @@ print(voice.frames, voice.sample_rate)
 Only BRZV format version 1 is supported. The loader validates the magic,
 version, dimensions, file length and UTF-8 transcript. Saved codes are tied to
 the codec/model used to create them; dimensions alone cannot prove compatibility.
+
+Note that the methods `generate_voice` and `generate_voice_wav` require a modified version of the upstream breeze.cpp source code (not included in the current build).
