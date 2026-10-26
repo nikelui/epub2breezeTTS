@@ -44,6 +44,10 @@ def main(args: argparse.Namespace) -> int:
         ffmpeg=args.ffmpeg, overwrite=args.overwrite, include_intro=not args.no_intro,
     )
     outputs = assemble_chapters(paths, options=options, chapter_indices=parse_chapter_selection(args.chapters))
+    
+    print("\nChapter assembly complete.\n")
+    print(f"Generated: {len(outputs.generated)}\n\
+            Skipped:   {len(outputs.skipped)}")
     # for output in outputs:
     #     print(f"Created: {output}")
     return 0

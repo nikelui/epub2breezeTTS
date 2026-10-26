@@ -49,6 +49,12 @@ def _write_silence(path: Path, params: tuple[int, int, int], seconds: float) -> 
         wav.setframerate(rate)
         wav.writeframes(sample * channels * frames)
 
+@dataclass
+class AssemblyResult:
+    generated: list[Path] = field(default_factory=list)
+    skipped: list[Path] = field(default_factory=list)
+    failed: list[tuple[str, str]] = field(default_factory=list)
+
 
 def _ffconcat_entry(path: Path) -> str:
     # ffconcat uses single-quoted file names with backslash escaping.
@@ -76,7 +82,7 @@ def load_manifest(paths) -> tuple[dict, dict[str, list[dict]]]:
     return metadata, chapters
 
 
-def assemble_chapters(paths, *, options: AssemblyOptions = AssemblyOptions(), chapter_indices: set[int] | None = None) -> list[Path]:
+def assemble_chapters(paths, *, options: AssemblyOptions = AssemblyOptions(), chapter_indices: set[int] | None = None) -> AssemblyResult:
     """Assemble all or selected chapters, validating all source WAVs first.
 
     `paths` is the existing ProjectPaths instance from models.py.
@@ -85,10 +91,12 @@ def assemble_chapters(paths, *, options: AssemblyOptions = AssemblyOptions(), ch
     metadata, records_by_chapter = load_manifest(paths)
     destination = paths.full_chapters
     destination.mkdir(parents=True, exist_ok=True)
-    results = []
+    results = AssemblyResult()
     author = ", ".join(metadata.get("authors") or [])
     book_title = metadata.get("title") or ""
 
+    #assembly_result = AssemblyResult()
+    
     for chapter in metadata["chapters"]:
         index = int(chapter["index"])
         if chapter_indices is not None and index not in chapter_indices:
@@ -118,7 +126,9 @@ def assemble_chapters(paths, *, options: AssemblyOptions = AssemblyOptions(), ch
 
         output = destination / f"chapter{index:04d}.{options.format}"
         if output.exists() and not options.overwrite:
-            raise FileExistsError(f"Output exists (use --overwrite): {output}")
+            print(f"[SKIP] Chapter {index:04d}: {destination.name}")
+            results.skipped.append(destination)
+            continue
         title = str(chapter.get("title") or f"Chapter {index}")
         with tempfile.TemporaryDirectory(prefix="chapter-assemble-") as tmp:
             tmpdir = Path(tmp)
@@ -155,6 +165,6 @@ def assemble_chapters(paths, *, options: AssemblyOptions = AssemblyOptions(), ch
                 raise RuntimeError(f"FFmpeg produced an empty file for {cid}")
             os.replace(staged, output)
             print(f"Created chapter {index} to {output}")
-            results.append(output)
-        results.append(output)
+            results.generated.append(output)
+        #results.append(output)
     return results
