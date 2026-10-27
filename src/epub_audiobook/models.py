@@ -33,6 +33,9 @@ class Chunk:
 
     # Original paragraph locations.
     sources: list[SourceSpan] = field(default_factory=list)
+    
+    # Type of chunk end, for adding pauses.
+    ending_type: str = "uncertain"
 
 
 @dataclass

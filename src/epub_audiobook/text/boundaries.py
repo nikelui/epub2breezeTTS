@@ -12,6 +12,26 @@ class Boundary:
     kind: str
     penalty: float  # smaller is better
 
+def ending_type(  # map boundary type to chunk endings
+    boundary: Boundary,
+    #chapter_text: str,  # There is not really need for this?
+) -> str:
+    if boundary.kind == "chapter_end":
+        return "chapter_end"
+    if boundary.kind == "paragraph_speaker":
+        return "dialogue_end"
+    if boundary.kind == "paragraph":
+        return "paragraph_end"
+    if boundary.kind == "sentence":
+        return "sentence_end"
+    if boundary.kind in {
+        "comma",
+        "semicolon",
+        "colon",
+    }:
+        return "pause"
+    return "uncertain"
+
 
 # Scores are costs of BREAKING here, not rewards. Tunable independently of the DP.
 BREAK_COST = {
