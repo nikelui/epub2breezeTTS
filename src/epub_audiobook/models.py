@@ -2,6 +2,16 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 
+
+@dataclass
+class TocEntry:
+    title: str
+    href: str
+    fragment: str | None
+    level: int
+    order: int
+
+
 @dataclass
 class SourceSpan:
     """
@@ -33,7 +43,7 @@ class Chunk:
 
     # Original paragraph locations.
     sources: list[SourceSpan] = field(default_factory=list)
-    
+
     # Type of chunk end, for adding pauses.
     ending_type: str = "uncertain"
 

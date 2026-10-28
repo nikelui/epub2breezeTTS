@@ -2,7 +2,8 @@ import argparse  # noqa: I001
 from pathlib import Path
 from epub_audiobook.models import Book
 
-from epub_audiobook.text.epub_reader import read_epub, inspect_epub_structure
+from epub_audiobook.text.epub_reader import read_epub2 as read_epub
+from epub_audiobook.text.epub_reader import inspect_epub_structure
 from epub_audiobook.text.chunker import ChunkConfig, chunk_chapter
 from epub_audiobook.text.export import (
     write_chunks_jsonl, write_metadata_json, write_paragraphs_jsonl)

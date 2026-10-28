@@ -1,6 +1,6 @@
 {
   "backend": "cython",
-  "output_dir": "output_test/P_and_P",
+  "output_dir": "output_test/Gatsby",
   "voice_dir": "voices/",
   "voice_id": "chiquito-crasto",
   "chapters": "20-21",
