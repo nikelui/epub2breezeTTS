@@ -42,6 +42,7 @@ def write_chunks_jsonl(book: Book, output_dir: str | Path) -> None:
                     'chunk_index': chunk.index,
                     'text': chunk.text,
                     'tts_text': chunk.tts_text,
+                    "ending_type": chunk.ending_type,
                     'sources': [vars(span) for span in chunk.sources],
                 }
                 f.write(json.dumps(row, ensure_ascii=False) + '\n')

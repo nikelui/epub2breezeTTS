@@ -1,13 +1,22 @@
 """Standalone chapter assembly CLI; also callable from the main argparse CLI."""
 import argparse
+import json
 from pathlib import Path
 
-from epub_audiobook.audio.assembler import AssemblyOptions, assemble_chapters
+from epub_audiobook.audio.assembler2 import (
+    AssemblyOptions,
+    assemble_book,
+    #assemble_chapters,
+)
+from epub_audiobook.models import ProjectPaths
+from epub_audiobook.pause_types import load_pause_config
 
 
 def add_subparser(subparsers) -> None:
     parser = subparsers.add_parser('assemble_audiobook', help='Assemble audiobook chapters')
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--pause-config", type=Path, default="config/assembly_pauses.json",
+        help="JSON file containing silence durations by ending type")
     parser.add_argument("--format", choices=("mp3", "m4a"), default="mp3")
     parser.add_argument("--silence", type=float, default=0.1, help="Seconds between chunks")
     parser.add_argument("--bitrate", default="128k")
@@ -37,14 +46,32 @@ def parse_chapter_selection(value: str | None) -> set[int] | None:
 
 
 def main(args: argparse.Namespace) -> int:
-    from epub_audiobook.models import ProjectPaths
     paths = ProjectPaths(args.output_dir)
+
+    pauses = (
+            load_pause_config(args.pause_config)
+            if args.pause_config
+            else None
+        )
+
     options = AssemblyOptions(
-        format=args.format, silence_seconds=args.silence, bitrate=args.bitrate,
-        ffmpeg=args.ffmpeg, overwrite=args.overwrite, include_intro=not args.no_intro,
+        format=args.format,
+        silence_seconds=args.silence,
+        bitrate=args.bitrate,
+        ffmpeg=args.ffmpeg,
+        overwrite=args.overwrite,
+        include_intro=not args.no_intro,
+        pauses=pauses,
     )
-    outputs = assemble_chapters(paths, options=options, chapter_indices=parse_chapter_selection(args.chapters))
-    
+
+    outputs = assemble_book(
+                paths=paths,
+                options=options,
+                chapters=args.chapters,
+        )
+
+    #outputs = assemble_chapters(paths, options=options, chapter_indices=parse_chapter_selection(args.chapters))
+
     print("\nChapter assembly complete.\n")
     print(f"Generated: {len(outputs.generated)}\nSkipped:   {len(outputs.skipped)}")
     # for output in outputs:

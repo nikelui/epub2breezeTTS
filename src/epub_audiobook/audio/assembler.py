@@ -21,6 +21,8 @@ class AssemblyOptions:
     overwrite: bool = False
     include_intro: bool = True
 
+    pauses: dict[str, float] | None = None
+
     def __post_init__(self) -> None:
         if self.format not in ("mp3", "m4a"):
             raise ValueError("format must be mp3 or m4a")
@@ -82,7 +84,7 @@ def load_manifest(paths) -> tuple[dict, dict[str, list[dict]]]:
     return metadata, chapters
 
 
-def assemble_chapters(paths, *, options: AssemblyOptions = AssemblyOptions(), chapter_indices: set[int] | None = None) -> AssemblyResult:
+def assemble_chapters(paths, *, options: AssemblyOptions, chapter_indices: set[int] | None = None) -> AssemblyResult:
     """Assemble all or selected chapters, validating all source WAVs first.
 
     `paths` is the existing ProjectPaths instance from models.py.
@@ -96,7 +98,7 @@ def assemble_chapters(paths, *, options: AssemblyOptions = AssemblyOptions(), ch
     book_title = metadata.get("title") or ""
 
     #assembly_result = AssemblyResult()
-    
+
     for chapter in metadata["chapters"]:
         index = int(chapter["index"])
         if chapter_indices is not None and index not in chapter_indices:
@@ -110,14 +112,18 @@ def assemble_chapters(paths, *, options: AssemblyOptions = AssemblyOptions(), ch
             raise ValueError(f"{cid}: no body chunks found")
 
         files: list[Path] = []
+        endings = []
+
         intro = paths.audio / cid / f"{cid}-c000000.wav"
         if options.include_intro and intro.exists():
             files.append(intro)
+            endings.append("chapter_title")
         for row in rows:
             file = paths.audio / cid / f"{row['id']}.wav"
             if not file.is_file():
                 raise FileNotFoundError(f"Missing source chunk: {file}")
             files.append(file)
+            endings.append(row.get("ending_type"))
 
         params = _wav_params(files[0])
         for file in files[1:]:

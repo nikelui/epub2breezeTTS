@@ -7,7 +7,8 @@ from bisect import bisect_left
 from dataclasses import dataclass
 
 from epub_audiobook.models import Chapter, Chunk
-from epub_audiobook.text.boundaries import Boundary, find_boundaries
+from epub_audiobook.pause_types import classify_boundary_kind
+from epub_audiobook.text.boundaries import Boundary, ending_type, find_boundaries
 from epub_audiobook.text.chapter_text import build_chapter_text
 
 
@@ -56,6 +57,12 @@ def chunk_chapter(chapter: Chapter, config: ChunkConfig | None = None) -> list[C
     boundaries = _ensure_long_word_boundaries(
         text, find_boundaries(source, config.language), config.max_chars
     )
+
+    boundary_at = {
+        boundary.position: boundary
+        for boundary in boundaries
+    }
+
     # DP only needs one position per candidate; add zero as the start.
     positions = [0] + [b.position for b in boundaries]
     boundary_cost = [0.0] + [b.penalty for b in boundaries]
@@ -95,6 +102,11 @@ def chunk_chapter(chapter: Chapter, config: ChunkConfig | None = None) -> list[C
 
     chunks: list[Chunk] = []
     for start, end in pairs:
+        selected_boundary = boundary_at[end]
+
+        chunk_ending = classify_boundary_kind(
+            selected_boundary.kind)
+
         # Preserve original source offsets; only trim chunk-edge whitespace.
         while start < end and text[start].isspace():
             start += 1
@@ -110,6 +122,8 @@ def chunk_chapter(chapter: Chapter, config: ChunkConfig | None = None) -> list[C
             text=content,
             tts_text=content,
             sources=source.source_spans(start, end),
+            ending_type=chunk_ending,
         ))
+    chunks[-1].ending_type = "chapter_end"  # Final chunk
     chapter.chunks = chunks
     return chunks

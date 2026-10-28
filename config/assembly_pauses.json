@@ -1,0 +1,11 @@
+{
+  "pauses": {
+    "chapter_title": 0.8,
+    "dialogue_end": 0.25,
+    "sentence_end": 0.12,
+    "paragraph_end": 0.3,
+    "chapter_end": 0.5,
+    "pause": 0.08,
+    "uncertain": 0.1
+  }
+}
