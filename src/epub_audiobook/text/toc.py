@@ -1,82 +1,103 @@
-"""Extract chapter references from an EPUB table of contents."""
+"""Extract structured navigation entries from an EPUB TOC."""
 
 from __future__ import annotations
 
 import posixpath
-import re
-from dataclasses import dataclass
 from urllib.parse import unquote, urldefrag
 
 from ebooklib import epub
 
-
-@dataclass(frozen=True)
-class TocChapter:
-    title: str
-    href: str
-    fragment: str
+from epub_audiobook.models import TocEntry
 
 
-def iter_toc_links(entries):
-    """Recursively yield links from an EbookLib TOC."""
+def normalize_toc_href(href: str) -> tuple[str, str | None]:
+    """Separate an EPUB navigation reference into path and fragment."""
 
-    for entry in entries:
+    path, fragment = urldefrag(href)
 
-        if isinstance(entry, epub.Link):
-            yield entry
+    path = posixpath.normpath(
+        unquote(path)
+    ) if path else ""
 
-        elif isinstance(entry, epub.Section):
-            # Some TOCs have sections with their own targets.
-            href = getattr(entry, "href", None)
+    fragment = unquote(fragment) or None
 
-            if href:
-                yield entry
-
-        elif isinstance(entry, (tuple, list)):
-            yield from iter_toc_links(entry)
+    return path, fragment
 
 
-def extract_toc_chapters(epub_book) -> list[TocChapter]:
-    """Extract chapter references in TOC order.
+def extract_toc_entries(book) -> list[TocEntry]:
+    """Flatten an EbookLib TOC while retaining navigation depth.
 
-    Initial strategy:
-    Select links whose fragments match chapter-N.
+    Supports:
+        epub.Link
+        epub.Section
+        nested tuples and lists
 
-    This works for the supplied Project Gutenberg Gatsby EPUB.
-    Other EPUBs may use different anchor naming conventions.
+    Does not filter entries by their titles or fragments.
     """
 
-    chapters = []
+    entries: list[TocEntry] = []
 
-    for link in iter_toc_links(epub_book.toc):
+    def add_entry(
+        title: str,
+        href: str,
+        level: int,
+    ) -> None:
 
-        href = getattr(link, "href", None)
+        document, fragment = normalize_toc_href(href)
 
-        if not href:
-            continue
-
-        document, fragment = urldefrag(href)
-
-        document = posixpath.normpath(
-            unquote(document)
-        )
-
-        fragment = unquote(fragment)
-
-        # Gutenberg-style chapter anchors.
-        if not re.fullmatch(
-            r"chapter-\d+",
-            fragment,
-            flags=re.IGNORECASE,
-        ):
-            continue
-
-        chapters.append(
-            TocChapter(
-                title=str(link.title).strip(),
+        entries.append(
+            TocEntry(
+                title=title.strip(),
                 href=document,
                 fragment=fragment,
+                level=level,
+                order=len(entries),
             )
         )
 
-    return chapters
+    def visit(node, level: int = 0) -> None:
+
+        if isinstance(node, epub.Link):
+
+            add_entry(
+                node.title,
+                node.href,
+                level,
+            )
+
+        elif isinstance(node, epub.Section):
+
+            href = getattr(node, "href", None)
+
+            if href:
+                add_entry(
+                    node.title,
+                    href,
+                    level,
+                )
+
+        elif isinstance(node, (list, tuple)):
+
+            # EbookLib commonly represents a section as:
+            #
+            # (Section(...), [child links])
+            #
+            # The section and its children have different depths.
+
+            if (
+                len(node) == 2
+                and isinstance(node[0], epub.Section)
+                and isinstance(node[1], (list, tuple))
+            ):
+
+                visit(node[0], level)
+                visit(node[1], level + 1)
+
+            else:
+
+                for child in node:
+                    visit(child, level)
+
+    visit(book.toc)
+
+    return entries

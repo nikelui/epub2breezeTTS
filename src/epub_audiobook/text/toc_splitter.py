@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from bs4 import BeautifulSoup
 
-from epub_audiobook.text.toc import TocChapter
+from epub_audiobook.models import TocEntry
 
 MARKER_PREFIX = "__EPUB_CHAPTER_BOUNDARY_"
 
 
 def mark_chapter_boundaries(
     content: bytes,
-    chapters: list[TocChapter],
+    chapters: list[TocEntry],
 ) -> bytes:
     """Insert temporary chapter markers into XHTML.
 
@@ -56,8 +56,8 @@ def mark_chapter_boundaries(
 
 def split_marked_blocks(
     blocks: list[tuple[str, str]],
-    chapters: list[TocChapter],
-) -> list[tuple[TocChapter, list[tuple[str, str]]]]:
+    chapters: list[TocEntry],
+) -> list[tuple[TocEntry, list[tuple[str, str]]]]:
     """Group extracted blocks according to chapter markers."""
 
     result = []

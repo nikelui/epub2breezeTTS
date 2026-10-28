@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from ebooklib import ITEM_DOCUMENT, epub
 
 from epub_audiobook.models import Book, Chapter, Paragraph
-from epub_audiobook.text.toc import extract_toc_chapters
+from epub_audiobook.text.toc import extract_toc_entries
 from epub_audiobook.text.toc_splitter import (
     mark_chapter_boundaries,
     split_marked_blocks,
@@ -66,7 +66,7 @@ def extract_paragraphs(html: bytes) -> list[tuple[str, str]]:
         ):
             continue
 
-        text = clean_inline_text(element.get_text(" ", strip=True))
+        text = clean_inline_text(element.get_text(separator=""))
         if not text:
             continue
 
@@ -220,7 +220,7 @@ def read_epub2(path: str | Path) -> Book:
     # 1. Read chapter references from TOC.
     # ---------------------------------------------------------
 
-    toc_chapters = extract_toc_chapters(epub_book)
+    toc_chapters = extract_toc_entries(epub_book)
 
     if not toc_chapters:
         raise ValueError(
