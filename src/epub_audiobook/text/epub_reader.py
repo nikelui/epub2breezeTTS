@@ -36,7 +36,7 @@ def extract_paragraphs(html: bytes) -> list[tuple[str, str]]:
 
     Headings are retained separately rather than being merged into prose.
     """
-    soup = BeautifulSoup(html, "lxml")
+    soup = BeautifulSoup(html, "lxml-xml")
 
     for tag in soup(
         ["script", "style", "noscript", "svg", "template"]
@@ -54,10 +54,10 @@ def extract_paragraphs(html: bytes) -> list[tuple[str, str]]:
     body = soup.body or soup
     result = []
 
-    for element in body.find_all(["h1", "h2", "h3", "h4", "p", "blockquote"]):
+    for element in body.find_all(["h1", "h2", "h3", "h4", "h5", "h6", "p", "blockquote"]):
         # Skip paragraphs nested inside another selected block.
         if element.find_parent(
-            ["p", "blockquote", "h1", "h2", "h3", "h4"]
+            ["p", "blockquote", "h1", "h2", "h3", "h4" , "h5", "h6"]
         ):
             continue
 
@@ -71,6 +71,53 @@ def extract_paragraphs(html: bytes) -> list[tuple[str, str]]:
             result.append(("paragraph", text))
 
     return result
+
+
+def inspect_epub_structure(epub_path):
+    book = epub.read_epub(str(epub_path))
+
+    print("\n=== SPINE ===")
+
+    for index, (item_id, linear) in enumerate(
+        book.spine, start=1
+    ):
+
+        item = book.get_item_with_id(item_id)
+
+        if item is None:
+            continue
+
+        print(
+            index,
+            item_id,
+            item.get_name(),
+            f"linear={linear}",
+        )
+
+    print("\n=== TABLE OF CONTENTS ===")
+
+    def show_toc(items, level=0):
+
+        for entry in items:
+
+            if isinstance(entry, epub.Link):
+                print(
+                    "  " * level,
+                    entry.title,
+                    entry.href,
+                )
+
+            elif isinstance(entry, epub.Section):
+                print(
+                    "  " * level,
+                    "[SECTION]",
+                    entry.title,
+                )
+
+            elif isinstance(entry, (tuple, list)):
+                show_toc(entry, level + 1)
+
+    show_toc(book.toc)
 
 
 def read_epub(path: str | Path) -> Book:

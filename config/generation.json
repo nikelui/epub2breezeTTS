@@ -1,8 +1,8 @@
 {
   "backend": "cython",
-  "output_dir": "output_test/Villainess Malfoy",
+  "output_dir": "output_test/P_and_P",
   "voice_dir": "voices/",
-  "voice_id": "louise-belle",
+  "voice_id": "chiquito-crasto",
   "chapters": "20-21",
   "chapter_intro": true,
   "cfg_scale": 1.0,
