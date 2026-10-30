@@ -15,23 +15,37 @@ def mark_chapter_boundaries(
 ) -> bytes:
     """Insert temporary chapter markers into XHTML.
 
-    Chapters must correspond to the current XHTML document.
+    Supports:
+            file.xhtml
+            file.xhtml#chapter1
 
     Markers are inserted immediately before the relevant
     chapter element, preserving original content order.
     """
-
     soup = BeautifulSoup(content, "lxml-xml")
 
+    body = soup.find("body")
+    if body is None:
+        raise ValueError("XHTML document has no body")
+
+
     for index, chapter in enumerate(chapters):
+        marker = soup.new_tag("h6")
+        marker.string = f"{MARKER_PREFIX}{index}__"
 
-        target = soup.find(id=chapter.fragment)
+        if chapter.fragment is None:
+            # A file-level TOC reference means the chapter
+            # starts at the beginning of the document.
+            body.insert(0, marker)
 
-        if target is None:
-            raise ValueError(
-                f"Chapter anchor not found: "
-                f"{chapter.href}#{chapter.fragment}"
-            )
+        else:
+            target = body.find(id=chapter.fragment)
+
+            if target is None:
+                raise ValueError(
+                    f"Chapter anchor not found: "
+                    f"{chapter.href}#{chapter.fragment}"
+                )
 
         # Anchors are sometimes inside headings:
         #
@@ -39,17 +53,15 @@ def mark_chapter_boundaries(
         #
         # Insert the marker before the whole heading rather
         # than in the middle of its content.
+            heading = target.find_parent(
+                ["h1", "h2", "h3", "h4", "h5", "h6"])
+            insertion_target = heading or target
+            paragraph = insertion_target.find_parent("p")
+            if paragraph is not None:
+                insertion_target = paragraph
 
-        heading = target.find_parent(
-            ["h1", "h2", "h3", "h4", "h5", "h6"]
-        )
 
-        insertion_target = heading or target
-
-        marker = soup.new_tag("h6")
-        marker.string = f"{MARKER_PREFIX}{index}__"
-
-        insertion_target.insert_before(marker)
+            insertion_target.insert_before(marker)
 
     return soup.encode("utf-8")
 

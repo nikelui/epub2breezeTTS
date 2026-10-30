@@ -249,10 +249,7 @@ def read_epub2(path: str | Path) -> Book:
 
         item = epub_book.get_item_with_id(idref)
 
-        if item is None:
-            continue
-
-        if item.get_type() != ITEM_DOCUMENT:
+        if item is None or item.get_type() != ITEM_DOCUMENT:
             continue
 
         if "nav" in item.properties:
@@ -268,10 +265,24 @@ def read_epub2(path: str | Path) -> Book:
 
         document_chapters = chapters_by_document.get(
             document_href,
+            [],
         )
+        if document_chapters:
 
-        if not document_chapters:
-            continue
+            marked_content = mark_chapter_boundaries(
+                item.get_content(),
+                document_chapters,
+            )
+
+            blocks = extract_paragraphs(marked_content)
+
+        else:
+
+            # No TOC entry for this document.
+            # Preserve the content rather than discard it.
+            blocks = extract_paragraphs(
+                item.get_content()
+            )
 
         # -----------------------------------------------------
         # 3. Insert markers at the TOC anchors.
@@ -346,4 +357,10 @@ def read_epub2(path: str | Path) -> Book:
             if chapter.paragraphs:
                 result.chapters.append(chapter)
 
+    # Safety check
+    if not result.chapters:
+        raise ValueError(
+            "EPUB extraction produced zero chapters. "
+            "Check TOC resolution, spine documents, "
+            "and paragraph extraction.")
     return result

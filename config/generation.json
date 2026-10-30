@@ -1,9 +1,9 @@
 {
   "backend": "cython",
-  "output_dir": "output_test/Gatsby",
+  "output_dir": "output_test/PP",
   "voice_dir": "voices/",
   "voice_id": "chiquito-crasto",
-  "chapters": "20-21",
+  "chapters": "3-4",
   "chapter_intro": true,
   "cfg_scale": 1.0,
   "seed": 42,

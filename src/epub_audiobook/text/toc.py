@@ -10,6 +10,55 @@ from ebooklib import epub
 from epub_audiobook.models import TocEntry
 
 
+def resolve_toc_item(
+    epub_book,
+    href: str,
+    navigation_file: str | None = None,
+):
+    """
+    Resolve a TOC reference to an EPUB item.
+
+    Returns:
+        (item, fragment)
+
+    Raises ValueError for missing or ambiguous references.
+    """
+
+    path, fragment = urldefrag(href)
+
+    path = unquote(path)
+    fragment = unquote(fragment) or None
+
+    if not path:
+        raise ValueError(
+            f"TOC reference has no document path: {href}"
+        )
+
+    candidates = [posixpath.normpath(path)]
+
+    if navigation_file:
+        resolved = posixpath.normpath(
+            posixpath.join(
+                posixpath.dirname(navigation_file),
+                path,
+            )
+        )
+
+        if resolved not in candidates:
+            candidates.append(resolved)
+
+    for candidate in candidates:
+
+        item = epub_book.get_item_with_href(candidate)
+
+        if item is not None:
+            return item, fragment
+
+    raise ValueError(
+        f"Could not resolve TOC reference: {href}. "
+        f"Tried: {candidates}"
+    )
+
 def normalize_toc_href(href: str) -> tuple[str, str | None]:
     """Separate an EPUB navigation reference into path and fragment."""
 
