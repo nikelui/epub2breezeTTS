@@ -18,7 +18,7 @@ def add_subparser(subparsers) -> None:
     parser.add_argument("--pause-config", type=Path, default="config/assembly_pauses.json",
         help="JSON file containing silence durations by ending type")
     parser.add_argument("--format", choices=("mp3", "m4b"), default="m4b")
-    parser.add_argument("--silence", type=float, default=0.1, help="Seconds between chunks")
+    # parser.add_argument("--silence", type=float, default=0.1, help="Seconds between chunks")
     parser.add_argument("--bitrate", default="128k")
     parser.add_argument("--ffmpeg", default="ffmpeg")
     parser.add_argument("--overwrite", action="store_true")
@@ -93,7 +93,7 @@ def main(args: argparse.Namespace) -> int:
 
     options = AssemblyOptions(
         format=args.format,
-        silence_seconds=args.silence,
+        # silence_seconds=args.silence,
         bitrate=args.bitrate,
         ffmpeg=args.ffmpeg,
         overwrite=args.overwrite,

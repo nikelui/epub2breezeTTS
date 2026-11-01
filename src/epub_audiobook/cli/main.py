@@ -1,13 +1,24 @@
 import argparse
+from pathlib import Path
 
 from epub_audiobook.cli import assemble_cli, audio_synthesis, book_info, process_text
 
+
+def add_config_argument(parser):
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=argparse.SUPPRESS,
+        help="Application configuration file",
+    )
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="epub2breezeTTS",
         description="Extract text from an ebook and synthesisze a narrated audiobook using Breeze voice TTS.",
     )
+
+    add_config_argument(parser)
 
     subparsers = parser.add_subparsers(
         dest="command",

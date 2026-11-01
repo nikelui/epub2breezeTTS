@@ -2,7 +2,6 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 
-
 @dataclass
 class TocEntry:
     title: str
@@ -90,6 +89,40 @@ class Book:
 
     def to_dict(self) -> dict:
         return asdict(self)
+
+@dataclass(frozen=True)
+class ChapterIntroOptions:
+    """Controls how artificial chapter introductions are generated."""
+
+    prefix: str = "Chapter"
+
+    include_prefix: bool = True
+    include_id: bool = True
+    include_title: bool = True
+
+    # Convert Roman numerals in the chapter title to decimals.
+    roman_to_decimal: bool = False
+
+    # Formatting options.
+    prefix_id_separator: str = " "
+    title_separator: str = ". "
+
+    def __post_init__(self) -> None:
+        if not (
+            self.include_prefix
+            or self.include_id
+            or self.include_title
+        ):
+            raise ValueError(
+                "At least one chapter introduction component "
+                "must be enabled"
+            )
+
+        if self.include_prefix and not self.prefix.strip():
+            raise ValueError(
+                "Prefix cannot be empty when include_prefix=True"
+            )
+
 
 @dataclass(frozen=True)
 class ProjectPaths:
