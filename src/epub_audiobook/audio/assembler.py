@@ -143,7 +143,7 @@ def load_chunks(path: Path) -> dict[str, list[dict]]:
                 ) from exc
 
             if not isinstance(record, dict):
-                raise ValueError(
+                raise TypeError(
                     f"Expected object on line {line_number}"
                 )
 
@@ -450,8 +450,8 @@ def write_concat_manifest(
         )
 
         # Never insert silence after the last audio file.
-        if index == len(parts) - 1:
-            continue
+        # if index == len(parts) - 1:
+        #     continue
 
         duration = get_pause_duration(
             ending_type=part.ending_type,
