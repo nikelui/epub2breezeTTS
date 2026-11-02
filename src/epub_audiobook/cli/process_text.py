@@ -8,17 +8,20 @@ from epub_audiobook.text.chunker import ChunkConfig, chunk_chapter
 from epub_audiobook.text.export import (
     write_chunks_jsonl, write_metadata_json, write_paragraphs_jsonl)
 
-def add_subparser(subparsers):
+def add_subparser(subparsers) -> argparse.ArgumentParser:
     parser = subparsers.add_parser('process_text', help='Process EPUB text and chunk it')
     parser.add_argument("epub", type=Path)
-    parser.add_argument("--output-dir", type=Path, default=Path("output/"))
-    parser.add_argument("--max-chars", type=int, default=400)
-    parser.add_argument("--target-chars", type=int, default=300)
-    parser.add_argument("--min-chars", type=int, default=150)
-    parser.add_argument("--verbose", action="store_true")
-    parser.add_argument("--book-structure", action="store_true")
+    parser.add_argument("--output-dir", type=Path, default=argparse.SUPPRESS,)
+    parser.add_argument("--max-chars", type=int, default=argparse.SUPPRESS)
+    parser.add_argument("--target-chars", type=int, default=argparse.SUPPRESS)
+    parser.add_argument("--min-chars", type=int, default=argparse.SUPPRESS)
+    parser.add_argument("--verbose", action=argparse.BooleanOptionalAction,
+       default=argparse.SUPPRESS)
+    parser.add_argument("--book-structure", action=argparse.BooleanOptionalAction,
+        default=argparse.SUPPRESS)
 
     parser.set_defaults(handler=main)
+    return parser
 
 def process_text(epub_path:Path, output_dir: Path, chunk_config) -> Book:
     """Extract text from epub and save relevant metadata, paragraphs and text chunks."""

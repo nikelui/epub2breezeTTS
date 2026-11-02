@@ -4,16 +4,25 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
 from epub_audiobook.audio.progress import Manifest, fingerprint, valid_wav
 from epub_audiobook.audio.selection import select_chapters
-from epub_audiobook.models import ProjectPaths
+from epub_audiobook.models import ChapterIntroOptions, ProjectPaths
 
 logger = logging.getLogger(__name__)
 
+ROMAN_PATTERN = re.compile(
+    r"^(?=.+$)"
+    r"M{0,3}"
+    r"(?:CM|CD|D?C{0,3})"
+    r"(?:XC|XL|L?X{0,3})"
+    r"(?:IX|IV|V?I{0,3})$",
+    re.IGNORECASE,
+)
 
 @dataclass(frozen=True)
 class AudioChunk:
@@ -76,6 +85,7 @@ def generate_selected(
     seed: int = 42,
     chapters: str | None = None,
     chapter_intro: bool = True,
+    intro_options: ChapterIntroOptions | None,
     force: bool = False,
     retry_failed: bool = True,
 ) -> GenerationSummary:
@@ -97,7 +107,7 @@ def generate_selected(
     ]
 
     tasks = selected_chunks + (
-        make_chapter_intros(selected_chunks)
+        make_chapter_intros(selected_chunks, intro_options)
         if chapter_intro
         else []
     )
@@ -149,10 +159,102 @@ def generate_selected(
             logger.exception("Failed to generate %s", chunk.id)
     return summary
 
+
+def roman_to_int(value: str) -> int:
+    """Convert a valid Roman numeral to an integer."""
+
+    roman = value.upper()
+
+    if not ROMAN_PATTERN.fullmatch(roman):
+        raise ValueError(
+            f"Invalid Roman numeral: {value!r}"
+        )
+
+    values = {
+        "I": 1,
+        "V": 5,
+        "X": 10,
+        "L": 50,
+        "C": 100,
+        "D": 500,
+        "M": 1000,
+    }
+
+    result = 0
+
+    for index, character in enumerate(roman):
+
+        current = values[character]
+
+        if (
+            index + 1 < len(roman)
+            and current < values[roman[index + 1]]
+        ):
+            result -= current
+        else:
+            result += current
+
+    return result
+
+
+def convert_roman_numerals_in_title(title: str) -> str:
+    """Convert Roman numerals used in chapter titles.
+
+    Examples:
+        Chapter IV       -> Chapter 4
+        CHAPTER IX       -> CHAPTER 9
+        Part XII         -> Part 12
+        IV               -> 4
+        Chapter IV: ...  -> Chapter 4: ...
+
+    Ordinary standalone Roman-looking words are not converted
+    unless the title consists entirely of a numeral.
+    """
+
+    # Match a Roman numeral following a common section label.
+    labelled_pattern = re.compile(
+        r"\b("
+        r"chapter|chap\.?|ch\.?|"
+        r"part|section|book|volume|vol\.?"
+        r")\s+([IVXLCDM]+)\b",
+        re.IGNORECASE,
+    )
+
+    def replace_labelled(match: re.Match) -> str:
+        label = match.group(1)
+        numeral = match.group(2)
+
+        try:
+            number = roman_to_int(numeral)
+        except ValueError:
+            return match.group(0)
+
+        return f"{label} {number}"
+
+    title = labelled_pattern.sub(
+        replace_labelled,
+        title,
+    )
+
+    # Also support titles consisting only of a Roman numeral:
+    # "IV" -> "4".
+    stripped = title.strip()
+
+    if ROMAN_PATTERN.fullmatch(stripped):
+        try:
+            return str(roman_to_int(stripped))
+        except ValueError:
+            pass
+
+    return title
+
+
 def make_chapter_intros(
     chunks: list[AudioChunk],
+    options: ChapterIntroOptions | None = None,
 ) -> list[AudioChunk]:
     """Generates a brief text with the chapter number and title (where available)"""
+    options = options or ChapterIntroOptions()
     by_chapter: dict[str, AudioChunk] = {}
 
     for chunk in chunks:
@@ -165,9 +267,7 @@ def make_chapter_intros(
             previous.chapter_index != chunk.chapter_index
             or previous.chapter_title != chunk.chapter_title
         ):
-            raise ValueError(
-                f"Inconsistent chapter metadata: {chunk.chapter_id}"
-            )
+            raise ValueError(f"Inconsistent chapter metadata: {chunk.chapter_id}")
 
     intros = []
 
@@ -175,10 +275,34 @@ def make_chapter_intros(
 
         title = chunk.chapter_title.strip()
 
-        if not title:
-            raise ValueError(
-                f"Missing chapter_title for {chapter_id}"
-            )
+        if options.include_title and not title:
+                    raise ValueError(f"Missing chapter_title for {chapter_id}")
+
+        if options.roman_to_decimal and title:
+            title = convert_roman_numerals_in_title(title)
+
+        components = []
+
+        # Prefix.
+        if options.include_prefix:
+            components.append(options.prefix.strip())
+
+        # Chapter number (human-readable index, not internal ID).
+        if options.include_id:
+            components.append(str(chunk.chapter_index))
+
+        header = options.prefix_id_separator.join(components)
+
+        # Add title.
+        if options.include_title:
+
+            if header:
+                intro_text = (header + options.title_separator + title)
+            else:
+                intro_text = title
+
+        else:
+            intro_text = header
 
         intros.append(
             AudioChunk(
@@ -186,7 +310,7 @@ def make_chapter_intros(
                 chapter_id=chapter_id,
                 chapter_index=chunk.chapter_index,
                 chunk_index=0,
-                text=f"Chapter {chunk.chapter_index}. {title}",
+                text=intro_text,
                 chapter_title=title,
             )
         )

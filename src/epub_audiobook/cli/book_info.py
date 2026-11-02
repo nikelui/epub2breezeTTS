@@ -3,12 +3,14 @@ from pathlib import Path
 from epub_audiobook.book_info import print_book_info
 from epub_audiobook.models import ProjectPaths
 
-def add_subparser(subparsers):
+def add_subparser(subparsers) -> argparse.ArgumentParser:
     parser = subparsers.add_parser('info', help='Print information about a processed book.')
-    parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--chunks", action="store_true", help="List each chunk and its status")
+    parser.add_argument("--output-dir", type=Path, default=argparse.SUPPRESS)
+    parser.add_argument("--chunks", action=argparse.BooleanOptionalAction,
+        default=argparse.SUPPRESS, help="List each chunk and its status")
 
     parser.set_defaults(handler=main)
+    return parser
 
 def main(args: argparse.Namespace):
     out_dir = Path(args.output_dir)

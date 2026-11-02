@@ -17,7 +17,7 @@ def _json_file(path: Path) -> dict[str, Any]:
     with path.open(encoding="utf-8") as stream:
         obj = json.load(stream)
     if not isinstance(obj, dict):
-        raise ValueError(f"Expected JSON object in {path}")
+        raise TypeError(f"Expected JSON object in {path}")
     return obj
 
 

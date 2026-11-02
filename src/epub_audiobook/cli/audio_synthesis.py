@@ -11,28 +11,38 @@ from epub_audiobook.audio.generator import generate_selected, read_chunks_jsonl
 from epub_audiobook.audio.http_backend import BreezeHTTPBackend, HTTPVoice
 from epub_audiobook.audio.progress import file_sha256, model_identity
 from epub_audiobook.audio.server_process import ManagedBreezeServer, ServerConfig
+from src.epub_audiobook.models import ChapterIntroOptions
 
 
-def add_subparser(subparsers):
+def add_subparser(subparsers) -> argparse.ArgumentParser:
     parser = subparsers.add_parser('audio_synthesis', help='Generate audio from text chunks')
-    parser.add_argument('--backend', choices=('cython', 'http'), default=None)
-    # parser.add_argument("--chunks", type=Path, required=True, help="Chapter-level chunks.jsonl")
-    parser.add_argument("--output-dir", type=Path)
-    parser.add_argument("--model", type=Path, help="GGUF path")
-    parser.add_argument('--reference-wav', type=Path, help='HTTP reference audio for cloning')
-    parser.add_argument('--reference-text', help='Exact transcript of HTTP reference WAV')
-    parser.add_argument("--voice-dir", type=Path, help="Saved voices directory")
-    parser.add_argument('--voice-id', help='Registered voice ID')
-    parser.add_argument("--chapters", help='e.g. "1,3-5" (overrides config)')
-    parser.add_argument("--chapter-intro", action=argparse.BooleanOptionalAction, default=None, help="Generate a spoken chapter heading")
-    parser.add_argument("--config", type=Path, help="Optional JSON config; supports chapters")
-    parser.add_argument("--cfg-scale", type=float, default=1.0)
-    parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--cpu", action="store_true")
-    parser.add_argument("--force", action="store_true", help="Regenerate selected WAVs")
-    parser.add_argument("--no-retry-failed", action="store_true")
+    parser.add_argument('--backend', choices=('cython', 'http'), default=argparse.SUPPRESS)
+    parser.add_argument("--output-dir", type=Path, default=argparse.SUPPRESS)
+    parser.add_argument("--model", type=Path, default=argparse.SUPPRESS)
+    parser.add_argument('--reference-wav', type=Path, help='HTTP reference audio for cloning',
+        default=argparse.SUPPRESS)
+    parser.add_argument('--reference-text', help='Exact transcript of HTTP reference WAV',
+        default=argparse.SUPPRESS)
+    parser.add_argument("--voice-dir", type=Path, help="Saved voices directory",
+        default=argparse.SUPPRESS)
+    parser.add_argument('--voice-id', help='Registered voice ID', default=argparse.SUPPRESS)
+    parser.add_argument("--chapters", default=argparse.SUPPRESS,
+        help='e.g. "1,3-5" (overrides config)')
+    parser.add_argument("--chapter-intro", action=argparse.BooleanOptionalAction,
+        default=argparse.SUPPRESS, help="Generate a spoken chapter heading")
+    parser.add_argument("--cfg-scale", type=float, default=argparse.SUPPRESS)
+    parser.add_argument("--seed", type=int, default=argparse.SUPPRESS)
+    parser.add_argument("--cpu", action=argparse.BooleanOptionalAction,
+            default=argparse.SUPPRESS,)
+    parser.add_argument("--force", action=argparse.BooleanOptionalAction,
+            default=argparse.SUPPRESS, help="Regenerate selected WAVs")
+    parser.add_argument("--retry-failed", action=argparse.BooleanOptionalAction,
+            default=argparse.SUPPRESS)
 
     parser.set_defaults(handler=main)
+
+    return parser
+
 
 def main(args: argparse.Namespace) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
@@ -51,6 +61,8 @@ def main(args: argparse.Namespace) -> int:
     voice_id = args.voice_id if args.voice_id is not None else config.get('voice_id')
     voice_dir = args.voice_dir if args.voice_dir is not None else config.get('voice_dir', 'voices/')
 
+    intro_options = ChapterIntroOptions(**args.chapter_intro_options)
+
     def generate(synthesizer, *, model_key: str, voice_key: str):
             return generate_selected(
                 chunks=chunks,
@@ -61,8 +73,9 @@ def main(args: argparse.Namespace) -> int:
                 cfg_scale=cfg_scale,
                 seed=args.seed,
                 chapters=chapter_spec,
+                intro_options=intro_options,
                 force=args.force,
-                retry_failed=not args.no_retry_failed,
+                retry_failed=not args.retry_failed,
                 chapter_intro=chapter_intro,
             )
 
@@ -85,8 +98,9 @@ def main(args: argparse.Namespace) -> int:
                 cfg_scale=cfg_scale,
                 seed=args.seed,
                 chapters=chapter_spec,
+                intro_options=intro_options,
                 force=args.force,
-                retry_failed=not args.no_retry_failed,
+                retry_failed=not args.retry_failed,
                 chapter_intro=chapter_intro,
             )
 

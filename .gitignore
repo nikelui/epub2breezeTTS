@@ -2,6 +2,7 @@
 .pixi/*
 !.pixi/config.toml
 debug.json
+*.old
 
 .gitattributes
 

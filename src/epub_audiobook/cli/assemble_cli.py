@@ -12,24 +12,30 @@ from epub_audiobook.models import ProjectPaths
 from epub_audiobook.pause_types import load_pause_config
 
 
-def add_subparser(subparsers) -> None:
+def add_subparser(subparsers) -> argparse.ArgumentParser:
     parser = subparsers.add_parser('assemble_audiobook', help='Assemble audiobook chapters')
-    parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--pause-config", type=Path, default="config/assembly_pauses.json",
+    parser.add_argument("--output-dir", type=Path, default=argparse.SUPPRESS)
+    parser.add_argument("--pause-config", type=Path, default=argparse.SUPPRESS,
         help="JSON file containing silence durations by ending type")
-    parser.add_argument("--format", choices=("mp3", "m4b"), default="m4b")
+    parser.add_argument("--format", choices=("mp3", "m4b"), default=argparse.SUPPRESS)
     # parser.add_argument("--silence", type=float, default=0.1, help="Seconds between chunks")
-    parser.add_argument("--bitrate", default="128k")
-    parser.add_argument("--ffmpeg", default="ffmpeg")
-    parser.add_argument("--overwrite", action="store_true")
-    parser.add_argument("--no-intro", action="store_true")
-    parser.add_argument("--chapters", help="Comma-separated chapter indices/ranges: 1,3-5")
-    parser.add_argument("--combine", action=argparse.BooleanOptionalAction, default=False,
+    parser.add_argument("--bitrate", default=argparse.SUPPRESS)
+    parser.add_argument("--ffmpeg", default=argparse.SUPPRESS)
+    parser.add_argument("--ffprobe", default=argparse.SUPPRESS)
+    parser.add_argument("--overwrite", action=argparse.BooleanOptionalAction,
+            default=argparse.SUPPRESS,)
+    parser.add_argument("--intro", dest="include_intro",
+        action=argparse.BooleanOptionalAction, default=argparse.SUPPRESS)
+    parser.add_argument("--chapters", default=argparse.SUPPRESS,
+        help="Comma-separated chapter indices/ranges: 1,3-5")
+    parser.add_argument("--combine", action=argparse.BooleanOptionalAction, default=argparse.SUPPRESS,
         help="Combine M4A chapters into a single bookmarked audiobook")
-    parser.add_argument("--combine-chapters", type=str, default=None, metavar="SELECTION",
-        help=("Chapters to include in the combined audiobook, "
+    parser.add_argument("--combine-chapters", type=str, default=argparse.SUPPRESS,
+        metavar="SELECTION", help=("Chapters to include in the combined audiobook, "
             "for example 1,3-5. Defaults to all chapters."))
     parser.set_defaults(handler=main)
+
+    return parser
 
 
 def parse_chapter_selection(value: str | None) -> set[int] | None:
@@ -97,7 +103,7 @@ def main(args: argparse.Namespace) -> int:
         bitrate=args.bitrate,
         ffmpeg=args.ffmpeg,
         overwrite=args.overwrite,
-        include_intro=not args.no_intro,
+        include_intro=args.include_intro,
         pauses=pauses,
     )
 
