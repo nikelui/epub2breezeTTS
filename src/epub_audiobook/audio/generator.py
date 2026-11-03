@@ -291,7 +291,7 @@ def make_chapter_intros(
 
         # Chapter number (human-readable index, not internal ID).
         if options.include_id:
-            components.append(str(generated_index))
+            components.append(str(chunk.chapter_index))
 
         header = options.prefix_id_separator.join(components)
 

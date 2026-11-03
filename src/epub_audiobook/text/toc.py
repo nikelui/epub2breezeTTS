@@ -3,12 +3,34 @@
 from __future__ import annotations
 
 import posixpath
+import re
+import unicodedata
 from urllib.parse import unquote, urldefrag
 
 from ebooklib import epub
 
 from epub_audiobook.models import TocEntry
 
+
+def normalize_chapter_title(title):
+    # Normalize Unicode characters
+    title = unicodedata.normalize("NFKC", title)
+
+    # Remove leading chapter numbers and labels
+    title = re.sub(
+        r'^\s*(chapter\s+)?(\d+|[ivxlcdm]+)\s*[\.\-:_)–—]*\s*',
+        '',
+        title,
+        flags=re.IGNORECASE
+    )
+
+    # Replace underscores and punctuation with spaces
+    title = re.sub(r"[^\w\s.,'!?’-]", " ", title)
+
+    # Collapse multiple spaces
+    title = re.sub(r'\s+', ' ', title)
+
+    return title.strip()
 
 def resolve_toc_item(
     epub_book,
@@ -96,7 +118,7 @@ def extract_toc_entries(book) -> list[TocEntry]:
 
         entries.append(
             TocEntry(
-                title=title.strip(),
+                title=normalize_chapter_title(title),
                 href=document,
                 fragment=fragment,
                 level=level,
