@@ -32,11 +32,11 @@ COMMAND_DEFAULTS: dict[str, dict[str, Any]] = {
 
     "audio_synthesis": {
         "backend": None,
-        "output_dir": None,
+        "output_dir": Path("output/"),
         "model": None,
         "reference_wav": None,
         "reference_text": None,
-        "voice_dir": None,
+        "voice_dir": Path("voices/"),
         "voice_id": None,
         "chapters": None,
         "chapter_intro": None,
@@ -74,7 +74,7 @@ COMMAND_DEFAULTS: dict[str, dict[str, Any]] = {
     },
 
     "assemble_audiobook": {
-        "output_dir": None,
+        "output_dir": Path("output/"),
         "pause_config": Path("config/assembly_pauses.json"),
         "format": "m4b",
         "bitrate": "128k",

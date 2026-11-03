@@ -72,7 +72,7 @@ def main(args: argparse.Namespace):
         for ch, chapter in enumerate(book.chapters, 1):
             print(f"Ch.{ch}: {len(chapter.chunks)} chunks.")
 
-        print(f"Project saved to: {args.output_dir.resolve()}")
+    print(f"Project saved to: {args.output_dir.resolve()}")
 
 
 # if __name__ == "__main__":
