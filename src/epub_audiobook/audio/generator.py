@@ -263,7 +263,9 @@ def make_chapter_intros(
             chunk,
         )
 
-        if (
+        if previous is None:
+            by_chapter[chunk.chapter_id] = chunk
+        elif (
             previous.chapter_index != chunk.chapter_index
             or previous.chapter_title != chunk.chapter_title
         ):
@@ -271,12 +273,12 @@ def make_chapter_intros(
 
     intros = []
 
-    for chapter_id, chunk in by_chapter.items():
+    for generated_index, (chapter_id, chunk) in enumerate(by_chapter.items(), start=1):
 
         title = chunk.chapter_title.strip()
 
         if options.include_title and not title:
-                    raise ValueError(f"Missing chapter_title for {chapter_id}")
+            raise ValueError(f"Missing chapter_title for {chapter_id}")
 
         if options.roman_to_decimal and title:
             title = convert_roman_numerals_in_title(title)
@@ -289,7 +291,7 @@ def make_chapter_intros(
 
         # Chapter number (human-readable index, not internal ID).
         if options.include_id:
-            components.append(str(chunk.chapter_index))
+            components.append(str(generated_index))
 
         header = options.prefix_id_separator.join(components)
 
